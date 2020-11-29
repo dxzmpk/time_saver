@@ -22,4 +22,6 @@
         \n\n\n\n
     </string>
     <string name="keyword">请输入查询关键词</string>
+    <string name="play_text_title">纯文本模式</string>
+    <string name="list_view_title">列表模式</string>
 </resources>

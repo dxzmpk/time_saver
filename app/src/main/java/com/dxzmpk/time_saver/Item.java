@@ -15,6 +15,10 @@ public class Item {
         return title;
     }
 
+    public String getOrderedTitle(int position) {
+        return position + ". " + title;
+    }
+
     public void setTitle(String title) {
         this.title = title;
     }

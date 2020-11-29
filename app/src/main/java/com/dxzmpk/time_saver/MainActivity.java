@@ -1,24 +1,27 @@
 package com.dxzmpk.time_saver;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.app.ProgressDialog;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ListView;
 import android.widget.TextView;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.w3c.dom.Text;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
@@ -27,9 +30,16 @@ public class MainActivity extends AppCompatActivity {
 
     private List<Item> itemList;
 
-    private TextView textShow;
+    private TextView plainTextView;
 
     private Button buttonGet;
+
+    private ListView textListView;
+
+    private int menuItemId = R.id.plain_text;
+
+    private View scrollView;
+
 
     private static final String TAG = "MainActivity";
 
@@ -37,11 +47,41 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        textShow = (TextView) findViewById(R.id.text_show);
+        plainTextView = (TextView) findViewById(R.id.text_show);
         buttonGet = (Button) findViewById(R.id.button_get);
+        textListView = (ListView) findViewById(R.id.text_list);
+        scrollView = findViewById(R.id.scroll_view);
     }
 
-    public void sendHttpRequest() {
+    /**
+     * create menu bar
+     * @param menu
+     * @return
+     */
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.main, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        menuItemId = item.getItemId();
+        switch (item.getItemId()) {
+            case R.id.list_view:
+                textListView.setVisibility(View.VISIBLE);
+                scrollView.setVisibility(View.GONE);
+                break;
+            case R.id.plain_text:
+                textListView.setVisibility(View.GONE);
+                scrollView.setVisibility(View.VISIBLE);
+                break;
+            default:
+        }
+        return true;
+    }
+
+    public void sendHttpRequest(ProgressDialog dialog) {
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -74,10 +114,20 @@ public class MainActivity extends AppCompatActivity {
                         parsedString.append(currentItem.toString());
                     }
 
+
+
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            textShow.setText(parsedString.toString());
+                            dialog.dismiss();
+                            if (menuItemId == R.id.plain_text) {
+                                plainTextView.setText(parsedString.toString());
+                            } else {
+                                ItemAdapter adapter = new ItemAdapter(MainActivity.this, R.layout.item,
+                                        itemList);
+                                textListView.setAdapter(adapter);
+                            }
+
                             buttonGet.setEnabled(true);
                             buttonGet.setText(R.string.get);
                         }
@@ -88,7 +138,7 @@ public class MainActivity extends AppCompatActivity {
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            textShow.setText("获取失败");
+                            plainTextView.setText("获取失败");
                         }
                     });
                 } finally {
@@ -112,6 +162,13 @@ public class MainActivity extends AppCompatActivity {
     public void getNewest(View view) {
         view.setEnabled(false);
         ((Button)view).setText(R.string.getting_message);
-        sendHttpRequest();
+
+        // progress dialog
+        ProgressDialog dialog = new ProgressDialog(MainActivity.this);
+        dialog.setTitle("加载中");
+        dialog.setMessage("此过程大约需要10秒，请耐心等待");
+        dialog.setCancelable(true);
+        dialog.show();
+        sendHttpRequest(dialog);
     }
 }
